@@ -152,7 +152,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .note-item{padding:6px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:start;}
 .note-item:last-child{border:none;}
 .note-date{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text4);min-width:36px;padding-top:2px;flex-shrink:0;}
-.note-text{font-size:12px;color:var(--text2);line-height:1.5;}
+.note-text{font-size:12px;color:var(--text2);line-height:1.5;flex:1;min-width:0;}
+.note-edit{width:100%;padding:4px 8px;border:1px solid var(--border2);border-radius:5px;font-family:'Inter',sans-serif;font-size:12px;background:var(--bg);color:var(--text);outline:none;resize:none;min-height:32px;display:none;line-height:1.5;}
+.note-edit:focus{border-color:var(--red);}
+.note-actions{display:flex;gap:4px;flex-shrink:0;margin-left:4px;align-items:start;}
+.note-actions button{border:none;background:none;cursor:pointer;font-size:10px;padding:2px 5px;border-radius:4px;color:var(--text4);transition:all .12s;}
+.note-actions button:hover{background:var(--bg3);color:var(--text);}
+.note-actions button.del-note:hover{color:var(--red);background:var(--redBg);}
 .note-input{width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;background:var(--bg);color:var(--text);outline:none;resize:none;min-height:48px;transition:border-color .2s;}
 .note-input:focus{border-color:var(--red);}
 
@@ -342,7 +348,7 @@ function rToday(){
     dues.forEach(r=>{
       const m=getMeta(r.id);if(!m)return;
       h+=`<div class="today-card due-card"><div class="tc-header"><div><div class="tc-name">${esc(m.label)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(m.desc)}</div></div><div style="display:flex;align-items:center;gap:8px"><span class="badge due">Review #${r.reviewCount+1}</span>${rProg(r)}</div></div><div class="tc-body">${rGrid(r.id)}`;
-      if(r.notes.length){h+=`<div class="dp-section" style="margin-top:16px"><div class="dp-section-t">Previous Notes</div><div class="notes">`;r.notes.forEach(n=>{h+=`<div class="note-item"><span class="note-date">${fmt(n.date)}</span><span class="note-text">${esc(n.text)}</span></div>`;});h+=`</div></div>`;}
+      if(r.notes.length){h+=`<div class="dp-section" style="margin-top:16px"><div class="dp-section-t">Previous Notes</div><div class="notes">`;r.notes.forEach((n,ni)=>{h+=`<div class="note-item"><span class="note-date">${fmt(n.date)}</span><span class="note-text" id="nt_${r.id}_${ni}" ondblclick="editNote('${r.id}',${ni},this)">${esc(n.text)}</span><textarea class="note-edit" id="ne_${r.id}_${ni}" onblur="saveEditNote('${r.id}',${ni})" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveEditNote('${r.id}',${ni})}">${esc(n.text)}</textarea><div class="note-actions"><button onclick="editNote('${r.id}',${ni},document.getElementById('nt_${r.id}_${ni}'))" title="Edit">✎</button><button class="del-note" onclick="delNote('${r.id}',${ni})" title="Delete">✕</button></div></div>`;});h+=`</div></div>`;}
       h+=`<div style="margin-top:12px"><textarea class="note-input" id="tn_${r.id}" placeholder="Write review notes..."></textarea><div class="actions"><span class="note-hint">Review #${r.reviewCount+1} of 5</span><button class="btn btn-p" onclick="saveNote('${r.id}','tn_${r.id}',false)">Save & Complete Review</button></div></div></div></div>`;
     });
   }
@@ -461,7 +467,7 @@ function rAllDet(){
     // Notes
     if(r.notes.length){
       h+=`<div class="dp-section"><div class="dp-section-t">Notes</div><div class="notes">`;
-      r.notes.forEach(n=>{h+=`<div class="note-item"><span class="note-date">${fmt(n.date)}</span><span class="note-text">${esc(n.text)}</span></div>`;});
+      r.notes.forEach((n,ni)=>{h+=`<div class="note-item"><span class="note-date">${fmt(n.date)}</span><span class="note-text" id="ant_${r.id}_${ni}" ondblclick="editNote('${r.id}',${ni},this,'a')">${esc(n.text)}</span><textarea class="note-edit" id="ane_${r.id}_${ni}" onblur="saveEditNote('${r.id}',${ni},'a')" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveEditNote('${r.id}',${ni},'a')}">${esc(n.text)}</textarea><div class="note-actions"><button onclick="editNote('${r.id}',${ni},document.getElementById('ant_${r.id}_${ni}'),'a')" title="Edit">✎</button><button class="del-note" onclick="delNote('${r.id}',${ni},'a')" title="Delete">✕</button></div></div>`;});
       h+=`</div></div>`;
     }
 
@@ -674,6 +680,39 @@ function lTh(){
     if(t){document.documentElement.setAttribute('data-theme',t);document.getElementById('thBtn').textContent=t==='dark'?'☀️':'🌙';}
     else{document.documentElement.setAttribute('data-theme','dark');document.getElementById('thBtn').textContent='☀️';}
   }catch(e){document.documentElement.setAttribute('data-theme','dark');}
+}
+
+function editNote(id,ni,textEl,prefix){
+  const p=prefix||'';
+  const span=document.getElementById(p+'nt_'+id+'_'+ni);
+  const ta=document.getElementById(p+'ne_'+id+'_'+ni);
+  if(!span||!ta)return;
+  span.style.display='none';
+  ta.style.display='block';
+  ta.focus();
+  ta.selectionStart=ta.value.length;
+}
+function saveEditNote(id,ni,prefix){
+  const p=prefix||'';
+  const ta=document.getElementById(p+'ne_'+id+'_'+ni);
+  if(!ta)return;
+  const r=D.ranges.find(x=>x.id===id);
+  if(!r||!r.notes[ni])return;
+  const v=ta.value.trim();
+  if(!v){return;}
+  r.notes[ni].text=v;
+  save();
+  const span=document.getElementById(p+'nt_'+id+'_'+ni);
+  if(span){span.textContent=v;span.style.display='';}
+  ta.style.display='none';
+}
+function delNote(id,ni,prefix){
+  if(!confirm('Delete this note?'))return;
+  const r=D.ranges.find(x=>x.id===id);
+  if(!r||!r.notes[ni])return;
+  r.notes.splice(ni,1);
+  save();rNav();rT();
+  if(ct==='all'){rAllList();rAllDet();}
 }
 lTh();load();rNav();rT();
 
