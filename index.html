@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,26 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{
+:root,[data-theme="light"]{
+--bg:#f5f5f7;--bg2:#eaeaef;--bg3:#e0e0e8;--bg4:#d4d4dc;
+--surface:rgba(255,255,255,.85);--surfaceSolid:#ffffff;
+--border:rgba(0,0,0,.06);--border2:rgba(0,0,0,.1);
+--text:#1a1a2e;--text2:#4a4a64;--text3:#7a7a94;--text4:#a0a0b4;
+--red:#dc2626;--red2:#ef4444;--redBg:rgba(220,38,38,.08);
+--green:#16a34a;--green2:#22c55e;--greenBg:rgba(22,163,74,.08);
+--gold:#d97706;--goldBg:rgba(217,119,6,.08);
+--blue:#2563eb;--blueBg:rgba(37,99,235,.07);
+--accent:#dc2626;--accentBg:rgba(220,38,38,.05);
+--shadow:0 2px 16px rgba(0,0,0,.06);--shadow2:0 8px 32px rgba(0,0,0,.08);
+--navBg:rgba(26,26,50,.95);
+--gcRaise:rgba(220,38,38,.2);--gcRaiseC:#b91c1c;
+--gcCall:rgba(22,163,74,.18);--gcCallC:#15803d;
+--gcFold:#eaeaef;--gcFoldC:#a0a0b4;
+--gcMixRC:linear-gradient(135deg,rgba(220,38,38,.2) 50%,rgba(22,163,74,.18) 50%);--gcMixRCC:#92400e;
+--gcMixRF:linear-gradient(135deg,rgba(220,38,38,.15) 50%,#eaeaef 50%);--gcMixRFC:#b91c1c;
+--gcMixCF:linear-gradient(135deg,rgba(22,163,74,.15) 50%,#eaeaef 50%);--gcMixCFC:#15803d;
+}
+[data-theme="dark"]{
 --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--bg4:#22222e;
 --surface:rgba(26,26,42,.85);--surfaceSolid:#1a1a2a;
 --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.1);
@@ -19,11 +38,19 @@
 --blue:#3b82f6;--blueBg:rgba(59,130,246,.1);
 --accent:#dc2626;--accentBg:rgba(220,38,38,.08);
 --shadow:0 2px 16px rgba(0,0,0,.4);--shadow2:0 8px 32px rgba(0,0,0,.5);
+--navBg:rgba(10,10,18,.95);
+--gcRaise:rgba(220,38,38,.35);--gcRaiseC:#fca5a5;
+--gcCall:rgba(34,197,94,.3);--gcCallC:#86efac;
+--gcFold:var(--bg2);--gcFoldC:var(--text4);
+--gcMixRC:linear-gradient(135deg,rgba(220,38,38,.35) 50%,rgba(34,197,94,.3) 50%);--gcMixRCC:#fde68a;
+--gcMixRF:linear-gradient(135deg,rgba(220,38,38,.25) 50%,var(--bg2) 50%);--gcMixRFC:#fca5a5;
+--gcMixCF:linear-gradient(135deg,rgba(34,197,94,.2) 50%,var(--bg2) 50%);--gcMixCFC:#86efac;
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;}
+.thbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:8px;transition:all .15s;}.thbtn:hover{background:var(--bg3);transform:scale(1.1);}
 
 /* Nav */
-.nav{background:rgba(10,10,18,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;}
+.nav{background:var(--navBg,rgba(10,10,18,.95));backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;}
 .nav-brand{display:flex;align-items:center;gap:10px;margin-right:32px;}
 .nav-brand svg{width:22px;height:22px;}
 .nav-brand span{font-weight:800;font-size:14px;letter-spacing:-.5px;color:var(--text);}
@@ -59,12 +86,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .grid{display:grid;grid-template-columns:repeat(14,1fr);gap:1px;background:var(--bg);border-radius:8px;overflow:hidden;width:100%;max-width:680px;}
 .gc{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;height:38px;min-width:0;transition:all .12s;position:relative;user-select:none;}
 .gc.hdr{background:var(--bg3);color:var(--text3);font-weight:700;font-size:9px;}
-.gc.raise{background:rgba(220,38,38,.35);color:#fca5a5;}
-.gc.call{background:rgba(34,197,94,.3);color:#86efac;}
-.gc.fold{background:var(--bg2);color:var(--text4);}
-.gc.mixed-rc{background:linear-gradient(135deg,rgba(220,38,38,.35) 50%,rgba(34,197,94,.3) 50%);color:#fde68a;}
-.gc.mixed-rf{background:linear-gradient(135deg,rgba(220,38,38,.25) 50%,var(--bg2) 50%);color:#fca5a5;}
-.gc.mixed-cf{background:linear-gradient(135deg,rgba(34,197,94,.2) 50%,var(--bg2) 50%);color:#86efac;}
+.gc.raise{background:var(--gcRaise);color:var(--gcRaiseC);}
+.gc.call{background:var(--gcCall);color:var(--gcCallC);}
+.gc.fold{background:var(--gcFold);color:var(--gcFoldC);}
+.gc.mixed-rc{background:var(--gcMixRC);color:var(--gcMixRCC);}
+.gc.mixed-rf{background:var(--gcMixRF);color:var(--gcMixRFC);}
+.gc.mixed-cf{background:var(--gcMixCF);color:var(--gcMixCFC);}
 .gc.pair{font-weight:800;}
 .gc:hover{filter:brightness(1.3);z-index:1;transform:scale(1.05);}
 .gc .pct{position:absolute;bottom:1px;right:2px;font-size:6px;opacity:.5;font-weight:400;}
@@ -167,7 +194,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <span>Range Master</span>
 </div>
 <div class="nav-tabs" id="nv"></div>
-<div class="nav-right"><span class="nav-count" id="navCount"></span></div>
+<div class="nav-right"><span class="nav-count" id="navCount"></span><button class="thbtn" id="thBtn" onclick="tTh()">☀️</button></div>
 </nav>
 <div class="main">
 <div class="tc" id="tToday"></div>
@@ -632,7 +659,23 @@ function rGuide(){
 `;
 }
 
-load();rNav();rT();
+
+function tTh(){
+  const h=document.documentElement;
+  const cur=h.getAttribute('data-theme');
+  const n=cur==='dark'?'light':'dark';
+  h.setAttribute('data-theme',n);
+  document.getElementById('thBtn').textContent=n==='dark'?'☀️':'🌙';
+  try{localStorage.setItem('prm_theme',n);}catch(e){}
+}
+function lTh(){
+  try{
+    const t=localStorage.getItem('prm_theme');
+    if(t){document.documentElement.setAttribute('data-theme',t);document.getElementById('thBtn').textContent=t==='dark'?'☀️':'🌙';}
+    else{document.documentElement.setAttribute('data-theme','dark');document.getElementById('thBtn').textContent='☀️';}
+  }catch(e){document.documentElement.setAttribute('data-theme','dark');}
+}
+lTh();load();rNav();rT();
 
 </script>
 </body>
