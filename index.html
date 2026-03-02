@@ -191,6 +191,30 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* Progress bar */
 .pbar{width:100%;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin:8px 0;}
 .pbar-f{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:2px;transition:width .5s;}
+
+/* Confetti */
+.confetti-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;}
+.confetti-p{position:absolute;width:8px;height:8px;border-radius:2px;animation:confettiFall 1.2s ease-out forwards;}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1);}100%{opacity:0;transform:translateY(80vh) rotate(720deg) scale(0.3);}}
+
+/* Card done slide-out */
+@keyframes cardDone{0%{opacity:1;transform:translateX(0) scale(1);}60%{opacity:.6;transform:translateX(30px) scale(.97);}100%{opacity:0;transform:translateX(120px) scale(.9);height:0;padding:0;margin:0;border:0;overflow:hidden;}}
+.today-card.card-done{animation:cardDone .6s ease-out forwards;pointer-events:none;}
+
+/* All-done popup */
+.cpop-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;animation:fadeIn .3s;}
+.cpop{background:var(--surfaceSolid);border-radius:18px;padding:36px 40px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:360px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{0%{transform:scale(.7);opacity:0;}100%{transform:scale(1);opacity:1;}}
+@keyframes fadeIn{0%{opacity:0;}100%{opacity:1;}}
+.cpop-icon{font-size:48px;margin-bottom:12px;}
+.cpop-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.cpop-sub{font-size:13px;color:var(--text3);margin-bottom:18px;}
+.cpop .btn{min-width:120px;display:block;margin:0 auto;text-align:center;}
+
+/* Completed today green cards */
+.done-section-hdr{margin:24px 0 10px;font-size:13px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;}
+.today-card.done-card{opacity:.7;border-left:3px solid var(--green);}
+.done-note-box{margin-top:6px;padding:8px 12px;background:var(--greenBg);border-radius:7px;font-size:13px;line-height:1.5;color:var(--text2);}
 </style>
 </head>
 <body>
@@ -328,8 +352,38 @@ function rToday(){
   const notStarted=RANGE_META.filter(m=>!D.ranges.find(r=>r.id===m.id)).length;
   const mastered=D.ranges.filter(r=>r.mastered).length;
   const learning=D.ranges.filter(r=>r.activated&&!r.mastered).length;
+  const totalTasks=dues.length+noNotes.length;
 
-  let h=`<div class="stats"><div class="stat"><div class="stat-v red">${dues.length}</div><div class="stat-l">Due Today</div></div><div class="stat"><div class="stat-v">${learning}</div><div class="stat-l">Learning</div></div><div class="stat"><div class="stat-v gold">${mastered}</div><div class="stat-l">Mastered</div></div><div class="stat"><div class="stat-v">${notStarted}</div><div class="stat-l">Remaining</div></div></div>`;
+  // Count reviews by stage
+  const rCounts={};dues.forEach(r=>{const k='R'+(r.reviewCount+1);rCounts[k]=(rCounts[k]||0)+1;});
+
+  // Tomorrow's tasks
+  const tmrw=new Date();tmrw.setDate(tmrw.getDate()+1);
+  const tmrwStr=tmrw.getFullYear()+'-'+String(tmrw.getMonth()+1).padStart(2,'0')+'-'+String(tmrw.getDate()).padStart(2,'0');
+  const tmrwDue=D.ranges.filter(r=>!r.mastered&&!isNoNote(r)&&r.nextReviewDate&&r.nextReviewDate<=tmrwStr&&r.nextReviewDate>td()).length;
+
+  // === Summary card ===
+  let h=`<div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">`;
+  // Left: Today's Tasks
+  h+=`<div style="flex:1;min-width:200px;background:var(--surface);border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);padding:16px 20px">`;
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:22px;font-weight:800;color:var(--text)">Today's Tasks <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">${totalTasks}</span></div></div>`;
+  h+=`<div style="display:flex;gap:8px;flex-wrap:wrap">`;
+  if(noNotes.length) h+=`<div style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;background:var(--goldBg);font-size:12px;font-weight:600;color:var(--gold)">No Note <span style="font-family:'JetBrains Mono',monospace;font-weight:800">${noNotes.length}</span></div>`;
+  ['R1','R2','R3','R4','R5'].forEach(k=>{if(rCounts[k]) h+=`<div style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;background:${k==='R5'?'var(--goldBg)':'var(--redBg)'};font-size:12px;font-weight:600;color:${k==='R5'?'var(--gold)':'var(--red2)'}">${k} <span style="font-family:'JetBrains Mono',monospace;font-weight:800">${rCounts[k]}</span></div>`;});
+  if(!totalTasks) h+=`<div style="font-size:12px;color:var(--text4)">No tasks for today</div>`;
+  h+=`</div>`;
+  // Sub stats
+  h+=`<div style="display:flex;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">`;
+  h+=`<div style="font-size:11px;color:var(--text3)">Learning <span style="font-weight:700;color:var(--text)">${learning}</span></div>`;
+  h+=`<div style="font-size:11px;color:var(--text3)">Mastered <span style="font-weight:700;color:var(--gold)">${mastered}</span></div>`;
+  h+=`<div style="font-size:11px;color:var(--text3)">Remaining <span style="font-weight:700;color:var(--text)">${notStarted}</span></div>`;
+  h+=`</div></div>`;
+  // Right: Tomorrow card
+  h+=`<div style="min-width:100px;background:var(--surface);border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);padding:16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center">`;
+  h+=`<div style="font-size:10px;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Tomorrow</div>`;
+  h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;color:var(--text3)">${tmrwDue}</div>`;
+  h+=`<div style="font-size:10px;color:var(--text4);margin-top:2px">${tmrwDue===1?'review':'reviews'}</div>`;
+  h+=`</div></div>`;
 
   if(notStarted>0){
     h+=`<div style="margin-bottom:20px"><button class="btn btn-p" onclick="learnNew()">Learn New Range</button></div>`;
@@ -359,8 +413,36 @@ function rToday(){
   if(!D.ranges.length){
     h+=`<div class="empty"><div class="empty-icon">◆</div><div class="empty-text">No ranges started yet</div><button class="btn btn-p" onclick="learnNew()">Learn New Range</button></div>`;
   }
+
+  // === Completed Today section ===
+  const doneToday=D.ranges.filter(r=>{
+    const lastNote=r.notes.length?r.notes[r.notes.length-1]:null;
+    return lastNote&&lastNote.date===td()&&!isDue(r)&&!isNoNote(r);
+  });
+  if(doneToday.length){
+    h+=`<div class="done-section-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Completed Today (${doneToday.length})</div>`;
+    doneToday.forEach(r=>{
+      const m=getMeta(r.id);if(!m)return;
+      const lastNote=r.notes[r.notes.length-1];
+      h+=`<div class="today-card done-card"><div class="tc-header"><div style="display:flex;align-items:center;gap:8px"><div class="tc-name">${esc(m.label)}</div>${r.mastered?'<span class="badge mastered" style="font-size:9px">Mastered!</span>':''}</div>${rProg(r)}</div>`;
+      if(lastNote) h+=`<div class="tc-body"><div class="done-note-box">${esc(lastNote.text)}</div></div>`;
+      h+=`</div>`;
+    });
+  }
+
   el.innerHTML=h;
 }
+
+// Sound effects
+function playRevSound(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();const g=ac.createGain();g.connect(ac.destination);g.gain.setValueAtTime(0.3,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.01,ac.currentTime+0.4);const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(523,ac.currentTime);o.frequency.setValueAtTime(659,ac.currentTime+0.1);o.frequency.setValueAtTime(784,ac.currentTime+0.2);o.connect(g);o.start(ac.currentTime);o.stop(ac.currentTime+0.4);}catch(e){}}
+function playMasterSound(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();const g=ac.createGain();g.connect(ac.destination);g.gain.setValueAtTime(0.3,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.01,ac.currentTime+0.8);const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(523,ac.currentTime);o.frequency.setValueAtTime(659,ac.currentTime+0.15);o.frequency.setValueAtTime(784,ac.currentTime+0.3);o.frequency.setValueAtTime(1047,ac.currentTime+0.45);o.connect(g);o.start(ac.currentTime);o.stop(ac.currentTime+0.8);}catch(e){}}
+function playAllDoneSound(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();const g=ac.createGain();g.connect(ac.destination);g.gain.setValueAtTime(0.25,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.01,ac.currentTime+1.2);[523,659,784,1047,784,1047].forEach((f,i)=>{const o=ac.createOscillator();o.type='sine';o.frequency.value=f;const og=ac.createGain();og.connect(g);og.gain.setValueAtTime(0.25,ac.currentTime+i*0.15);og.gain.exponentialRampToValueAtTime(0.01,ac.currentTime+i*0.15+0.3);o.connect(og);o.start(ac.currentTime+i*0.15);o.stop(ac.currentTime+i*0.15+0.3);});}catch(e){}}
+
+// Confetti
+function fireConfetti(el){const wrap=document.createElement('div');wrap.className='confetti-wrap';document.body.appendChild(wrap);const colors=['#dc2626','#22c55e','#facc15','#3b82f6','#a78bfa','#f43f5e'];const rect=el?el.getBoundingClientRect():null;const cx=rect?rect.left+rect.width/2:window.innerWidth/2;const cy=rect?rect.top:window.innerHeight/2;for(let i=0;i<40;i++){const p=document.createElement('div');p.className='confetti-p';p.style.background=colors[Math.floor(Math.random()*colors.length)];p.style.left=(cx+Math.random()*200-100)+'px';p.style.top=(cy+Math.random()*40-20)+'px';p.style.animationDuration=(0.8+Math.random()*0.8)+'s';p.style.animationDelay=(Math.random()*0.2)+'s';p.style.width=(5+Math.random()*6)+'px';p.style.height=(5+Math.random()*6)+'px';wrap.appendChild(p);}setTimeout(()=>wrap.remove(),2000);}
+
+// All-done popup
+function showAllDonePopup(){const ov=document.createElement('div');ov.className='cpop-overlay';ov.onclick=e=>{if(e.target===ov)ov.remove();};ov.innerHTML=`<div class="cpop"><div class="cpop-icon">&#10024;</div><div class="cpop-title">All Reviews Complete!</div><div class="cpop-sub">You've finished all of today's review tasks. Great work!</div><button class="btn btn-p" onclick="this.closest('.cpop-overlay').remove()">Done</button></div>`;document.body.appendChild(ov);playAllDoneSound();fireConfetti();}
 
 function learnNew(){
   const notStarted=RANGE_META.filter(m=>!D.ranges.find(r=>r.id===m.id));
@@ -375,15 +457,33 @@ function saveNote(id,inputId,isActivation){
   const inp=document.getElementById(inputId);
   if(!inp||!inp.value.trim()){alert('Please write a note.');return;}
   r.notes.push({date:td(),text:inp.value.trim()});
+  let justMastered=false;
   if(isActivation){
     r.nextReviewDate=cNext(td(),0);
   } else if(isDue(r)){
     r.reviewCount++;
-    if(r.reviewCount>=5){r.mastered=true;r.nextReviewDate=null;}
+    if(r.reviewCount>=5){r.mastered=true;r.nextReviewDate=null;justMastered=true;}
     else{r.nextReviewDate=cNext(td(),r.reviewCount);}
   }
-  save();rNav();rT();
-  if(ct==='all'){rAllList();rAllDet();}
+  save();
+
+  // Effects
+  const card=inp?inp.closest('.today-card'):null;
+  const btn=inp?inp.parentElement.querySelector('.btn'):null;
+  if(justMastered){playMasterSound();fireConfetti(btn);}
+  else{playRevSound();fireConfetti(btn);}
+
+  // Slide-out animation on Today tab
+  if(ct==='today'&&card){card.classList.add('card-done');setTimeout(()=>{rToday();rNav();},650);}
+  else{if(ct==='today')rToday();rNav();}
+  if(ct==='all'){rAllList();rAllDet();rNav();}
+
+  // Check if all today's tasks are done
+  setTimeout(()=>{
+    const duesLeft=D.ranges.filter(isDue).length;
+    const noNotesLeft=D.ranges.filter(r=>r.activated&&!r.mastered&&r.notes.length===0&&r.reviewCount===0).length;
+    if(duesLeft===0&&noNotesLeft===0&&ct==='today'&&D.ranges.length){showAllDonePopup();}
+  },700);
 }
 
 // ALL
