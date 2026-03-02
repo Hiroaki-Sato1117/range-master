@@ -306,6 +306,38 @@ function daysLeft(r){if(!r.nextReviewDate||r.mastered)return null;return Math.ro
 function isDue(r){return!r.mastered&&r.activated&&r.nextReviewDate&&r.nextReviewDate<=td();}
 function isNoNote(r){return r.activated&&r.reviewCount===0&&r.notes.length===0;}
 function save(){try{localStorage.setItem('prm1',JSON.stringify(D));}catch(e){}}
+// === skillme integration ===
+function notifyParent(type,payload){
+  if(window.parent===window)return;
+  window.parent.postMessage({source:'range-master',type,payload},'*');
+}
+function buildSnapshot(){
+  const total=RANGE_META.length;
+  const mastered=D.ranges.filter(r=>r.mastered).length;
+  const noNote=D.ranges.filter(r=>isNoNote(r)).length;
+  const active=D.ranges.filter(r=>r.activated&&!r.mastered).length-noNote;
+  const due=D.ranges.filter(isDue).length;
+  let streak=0;const d=new Date();
+  const revDates=new Set();D.ranges.forEach(r=>(r.notes||[]).forEach(n=>{if(n.date)revDates.add(n.date);}));
+  for(let i=0;i<365;i++){const ds=new Date(d);ds.setDate(ds.getDate()-i);const dk=ds.getFullYear()+'-'+String(ds.getMonth()+1).padStart(2,'0')+'-'+String(ds.getDate()).padStart(2,'0');if(revDates.has(dk))streak++;else if(i>0)break;}
+  return{total,active,due,mastered,streak};
+}
+function buildTasks(){
+  const today=td();const tasks=[];
+  D.ranges.forEach(function(r){
+    const meta=getMeta(r.id);if(!meta)return;
+    if(isDue(r)){
+      tasks.push({id:r.id,title:meta.label||r.id,subtitle:meta.cat||'',taskType:'review',reviewStage:r.reviewCount,isOverdue:r.nextReviewDate<today,dueDate:r.nextReviewDate||null});
+    }else if(isNoNote(r)){
+      tasks.push({id:r.id,title:meta.label||r.id,subtitle:meta.cat||'',taskType:'activation',reviewStage:null,isOverdue:false,dueDate:null});
+    }
+  });
+  return tasks;
+}
+window.addEventListener('message',function(ev){
+  if(ev.data&&ev.data.type==='request:snapshot'){notifyParent('snapshot',buildSnapshot());}
+  if(ev.data&&ev.data.type==='request:tasks'){notifyParent('tasks',{tasks:buildTasks()});}
+});
 function load(){try{const s=localStorage.getItem('prm1');if(s){D=JSON.parse(s);if(!D.ranges)D.ranges=[];if(!D.dailyLog)D.dailyLog={};}}catch(e){}}
 
 function getMeta(id){return RANGE_META.find(m=>m.id===id);}
@@ -474,10 +506,11 @@ function saveNote(id,inputId,isActivation){
   let justMastered=false;
   if(isActivation){
     r.nextReviewDate=cNext(td(),0);
+    notifyParent('task:activation',{rangeId:id,date:td()});
   } else if(isDue(r)){
     r.reviewCount++;
-    if(r.reviewCount>=5){r.mastered=true;r.nextReviewDate=null;justMastered=true;}
-    else{r.nextReviewDate=cNext(td(),r.reviewCount);}
+    if(r.reviewCount>=5){r.mastered=true;r.nextReviewDate=null;justMastered=true;notifyParent('task:mastery',{rangeId:id,date:td(),reviewCount:r.reviewCount});}
+    else{r.nextReviewDate=cNext(td(),r.reviewCount);notifyParent('task:review',{rangeId:id,date:td(),reviewCount:r.reviewCount});}
   }
   save();
 
