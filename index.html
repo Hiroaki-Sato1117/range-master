@@ -215,6 +215,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .done-section-hdr{margin:24px 0 10px;font-size:13px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;}
 .today-card.done-card{opacity:.7;border-left:3px solid var(--green);}
 .done-note-box{margin-top:6px;padding:8px 12px;background:var(--greenBg);border-radius:7px;font-size:13px;line-height:1.5;color:var(--text2);}
+
+/* Stats tab */
+.stat-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+.stat-box{background:var(--bg2);padding:18px 14px;text-align:center;transition:background .2s;}
+.stat-box:first-child{border-radius:14px 0 0 14px;}.stat-box:last-child{border-radius:0 14px 14px 0;}
+.sv{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:800;color:var(--text);line-height:1;}
+.sv.red{color:var(--red);}.sv.green{color:var(--green);}.sv.gold{color:var(--gold);}
+.sl{font-size:9px;color:var(--text3);margin-top:5px;text-transform:uppercase;letter-spacing:1px;font-weight:600;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:700px){.stats-row{grid-template-columns:1fr;}}
+.flame-anim{animation:flameFlicker 1.5s ease-in-out infinite alternate;}
+@keyframes flameFlicker{0%{transform:scale(1) translateY(0);filter:brightness(1);}50%{transform:scale(1.06) translateY(-2px);filter:brightness(1.15);}100%{transform:scale(.97) translateY(1px);filter:brightness(.95);}}
+.stat-bar-anim{animation:barGrow .8s cubic-bezier(.23,1,.32,1) both;}
+@keyframes barGrow{from{transform:scaleY(0);}to{transform:scaleY(1);}}
 </style>
 </head>
 <body>
@@ -229,7 +243,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <div class="main">
 <div class="tc" id="tToday"></div>
 <div class="tc" id="tAll"></div>
-<div class="tc" id="tProgress"></div>
+<div class="tc" id="tStats"></div>
 <div class="tc" id="tGuide"></div>
 </div>
 <script>
@@ -280,7 +294,7 @@ const RANGE_META=[
 
 const RANKS=['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
 const INTV=[1,3,7,14,30];
-const TABS=[{id:'today',label:'TODAY'},{id:'all',label:'ALL RANGES'},{id:'progress',label:'PROGRESS'},{id:'guide',label:'GUIDE'}];
+const TABS=[{id:'today',label:'TODAY'},{id:'all',label:'ALL RANGES'},{id:'stats',label:'STATS'},{id:'guide',label:'GUIDE'}];
 let D={ranges:[],dailyLog:{}};
 let ct='today',selId=null;
 
@@ -341,7 +355,7 @@ function rNav(){
   document.getElementById('navCount').textContent=`${mastered}/${RANGE_META.length} mastered`;
 }
 function rT(){document.querySelectorAll('.tc').forEach(e=>e.classList.remove('active'));document.getElementById('t'+ct.charAt(0).toUpperCase()+ct.slice(1)).classList.add('active');
-  if(ct==='today')rToday();else if(ct==='all')rAll();else if(ct==='progress')rProgress();else rGuide();
+  if(ct==='today')rToday();else if(ct==='all')rAll();else if(ct==='stats')rStats();else rGuide();
 }
 
 // TODAY
@@ -606,45 +620,167 @@ function resetR(id){
 }
 
 // PROGRESS
-function rProgress(){
-  const el=document.getElementById('tProgress');
+function animateNum(el,target,duration=600){
+  const start=performance.now();
+  const from=0;
+  function tick(now){
+    const t=Math.min((now-start)/duration,1);
+    const ease=1-Math.pow(1-t,3);
+    el.textContent=Math.round(from+(target-from)*ease);
+    if(t<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function rStats(){
+  const el=document.getElementById('tStats');
   const total=RANGE_META.length;
-  const started=D.ranges.length;
   const mastered=D.ranges.filter(r=>r.mastered).length;
   const learning=D.ranges.filter(r=>r.activated&&!r.mastered).length;
+  const totalReviews=D.ranges.reduce((s,r)=>s+r.reviewCount,0);
   const pct=total>0?Math.round(mastered/total*100):0;
 
-  let h=`<div class="stats"><div class="stat"><div class="stat-v">${total}</div><div class="stat-l">Total Ranges</div></div><div class="stat"><div class="stat-v">${started}</div><div class="stat-l">Started</div></div><div class="stat"><div class="stat-v red">${learning}</div><div class="stat-l">Learning</div></div><div class="stat"><div class="stat-v gold">${mastered}</div><div class="stat-l">Mastered</div></div></div>`;
+  // --- A. Top Stats Bar ---
+  let h=`<div class="stat-bar">`;
+  h+=`<div class="stat-box"><div class="sv" data-anim="${total}" data-delay="0">0</div><div class="sl">Total Ranges</div></div>`;
+  h+=`<div class="stat-box"><div class="sv red" data-anim="${learning}" data-delay="80">0</div><div class="sl">Learning</div></div>`;
+  h+=`<div class="stat-box"><div class="sv gold" data-anim="${mastered}" data-delay="160">0</div><div class="sl">Mastered</div></div>`;
+  h+=`<div class="stat-box"><div class="sv green" data-anim="${totalReviews}" data-delay="240">0</div><div class="sl">Total Reviews</div></div>`;
+  h+=`</div>`;
 
-  h+=`<div class="card"><div class="card-h"><span class="card-title">Overall Progress</span><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:var(--gold)">${pct}%</span></div><div class="card-body"><div class="pbar"><div class="pbar-f" style="width:${pct}%"></div></div></div></div>`;
+  // --- B+C+D Row ---
+  h+=`<div class="stats-row">`;
 
-  // Category breakdown
-  [{cat:'RFI',label:'Raise First In'},{cat:'VS_RFI',label:'vs RFI'}].forEach(({cat,label})=>{
-    const catMeta=RANGE_META.filter(m=>m.cat===cat);
-    const catMastered=catMeta.filter(m=>D.ranges.find(r=>r.id===m.id&&r.mastered)).length;
-    const catPct=catMeta.length>0?Math.round(catMastered/catMeta.length*100):0;
-    h+=`<div class="card"><div class="card-h"><span class="card-title">${label}</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3)">${catMastered}/${catMeta.length}</span></div><div class="card-body"><div class="pbar"><div class="pbar-f" style="width:${catPct}%"></div></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">`;
-    catMeta.forEach(m=>{
-      const r=D.ranges.find(x=>x.id===m.id);
-      const cls=!r?'new':(r.mastered?'mastered':'learning');
-      h+=`<span class="badge ${cls}">${m.label}</span>`;
-    });
-    h+=`</div></div></div>`;
-  });
+  // --- B. Mastery Rate Ring ---
+  const circR=54,circC=2*Math.PI*circR;
+  const dashOff=circC*(1-pct/100);
+  h+=`<div class="card"><div class="card-h"><span class="card-title">Mastery Rate</span></div><div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:8px">`;
+  h+=`<div style="position:relative;width:130px;height:130px">`;
+  h+=`<svg viewBox="0 0 130 130" width="130" height="130"><circle cx="65" cy="65" r="${circR}" fill="none" stroke="var(--bg4)" stroke-width="10"/>`;
+  h+=`<circle class="mastery-ring" cx="65" cy="65" r="${circR}" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" transform="rotate(-90 65 65)" stroke-dasharray="${circC}" stroke-dashoffset="${circC}" data-target="${dashOff}"/></svg>`;
+  h+=`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">`;
+  h+=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><polygon points="12,2 15,9 22,9 16.5,14 18.5,22 12,17.5 5.5,22 7.5,14 2,9 9,9"/></svg>`;
+  h+=`<span style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:800;color:var(--gold)" data-anim="${pct}" data-delay="300" data-suffix="%">0</span>`;
+  h+=`</div></div>`;
+  h+=`<div style="font-size:12px;color:var(--text3)">${mastered} of ${total} mastered</div>`;
+  h+=`</div></div>`;
 
-  // Upcoming reviews
-  const upcoming=D.ranges.filter(r=>r.activated&&!r.mastered&&r.nextReviewDate).sort((a,b)=>(a.nextReviewDate||'').localeCompare(b.nextReviewDate||''));
-  if(upcoming.length){
-    h+=`<div class="card"><div class="card-h"><span class="card-title">Upcoming Reviews</span></div><div class="card-body">`;
-    upcoming.slice(0,10).forEach(r=>{
-      const m=getMeta(r.id);if(!m)return;
-      const dl=daysLeft(r);const due=dl!==null&&dl<=0;
-      h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;font-weight:600">${esc(m.label)}</span>${rProg(r)}</div><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${due?'var(--red)':'var(--text3)'}">${due?'Due':dl+'d'}</span></div>`;
-    });
-    h+=`</div></div>`;
+  // --- C. Day Streak ---
+  const allDates=new Set();
+  D.ranges.forEach(r=>r.notes.forEach(n=>{if(n.date)allDates.add(n.date);}));
+  let streak=0;
+  const today=new Date(td());
+  for(let i=0;i<365;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    if(allDates.has(ds))streak++;else break;
   }
+  let flameSize=44,flameColor='var(--text4)',flameGlow='',flameMsg='Start your streak!';
+  if(streak>=1&&streak<=3){flameSize=52;flameColor='var(--gold)';flameMsg='Keep it up!';}
+  if(streak>=4&&streak<=7){flameSize=64;flameColor='#f97316';flameMsg='On a roll!';}
+  if(streak>=8){flameSize=80;flameColor='var(--red)';flameGlow=`filter:drop-shadow(0 0 12px var(--red));`;flameMsg="You're on fire!";}
+
+  h+=`<div class="card"><div class="card-h"><span class="card-title">Day Streak</span></div><div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:8px">`;
+  h+=`<div class="flame-anim" style="width:${flameSize}px;height:${flameSize}px;${flameGlow}">`;
+  h+=`<svg viewBox="0 0 24 24" width="${flameSize}" height="${flameSize}" fill="${flameColor}"><path d="M12 23c-4.97 0-8-3.03-8-7 0-2.14.86-3.88 2-5.28.7-.87 1.46-1.6 2-2.72 0 0 .64 2.27 2.27 3.49C10.84 7.02 12 2 12 2s1 3 2.5 5.5c.6 1 1.3 1.8 1.5 3-.5-1-1.5-2-1.5-2s.5 2 .5 3.5c0 1.5-.5 3-2 4-1 .67-2.5 1-3.5 1h.5c3 0 5.5-2 6-4.5.33-1.67 0-3-.5-4.5-.67 2-1.5 2.5-1.5 2.5s.33-2.5-.5-4.5C12.73 4 11.5 2.5 12 2c-2 3-5.5 5-6.5 9-.5 2 0 4 .5 5.5C7 18.5 9 20 12 20c2.5 0 4.5-1.5 5-3.5.5-2-.5-4-2-5 .5 1.5 0 3-1 4-.5.5-1.5 1-2 1z"/></svg>`;
+  h+=`</div>`;
+  h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:${streak>0?flameColor:'var(--text4)'}" data-anim="${streak}" data-delay="200">0</div>`;
+  h+=`<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600">Day${streak!==1?'s':''} Streak</div>`;
+  h+=`<div style="font-size:12px;color:var(--text2);font-weight:500;margin-top:2px">${flameMsg}</div>`;
+  h+=`</div></div>`;
+
+  // --- D. Daily Activity (14 days) ---
+  const days14=[];
+  for(let i=13;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    const newCount=D.ranges.filter(r=>r.learnedDate===ds).length;
+    const revCount=D.ranges.reduce((s,r)=>s+r.notes.filter(n=>n.date===ds).length,0);
+    days14.push({date:ds,day:d.getDate(),newC:newCount,revC:revCount,isToday:i===0});
+  }
+  const maxAct=Math.max(1,...days14.map(d=>d.newC+d.revC));
+
+  h+=`<div class="card"><div class="card-h"><span class="card-title">Daily Activity</span><span style="font-size:10px;color:var(--text3)">14 days</span></div><div class="card-body">`;
+  h+=`<div style="display:flex;align-items:end;gap:4px;height:100px;padding-bottom:20px;position:relative">`;
+  days14.forEach((d,i)=>{
+    const totalH=d.newC+d.revC;
+    const hPct=maxAct>0?(totalH/maxAct*100):0;
+    const revPct=maxAct>0?(d.revC/maxAct*100):0;
+    const newPct=maxAct>0?(d.newC/maxAct*100):0;
+    const borderR=d.isToday?'border:1px solid var(--gold);':'';
+    h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0;position:relative">`;
+    h+=`<div style="width:100%;display:flex;flex-direction:column;justify-content:end;height:80px">`;
+    if(newPct>0)h+=`<div class="stat-bar-anim" style="width:100%;height:${newPct}%;background:var(--green);border-radius:3px 3px 0 0;min-height:${d.newC>0?'3px':'0'};transform-origin:bottom;animation-delay:${i*40}ms"></div>`;
+    if(revPct>0)h+=`<div class="stat-bar-anim" style="width:100%;height:${revPct}%;background:var(--red);border-radius:${d.newC>0?'0':'3px 3px'} 0 0;min-height:${d.revC>0?'3px':'0'};${borderR}transform-origin:bottom;animation-delay:${i*40+20}ms"></div>`;
+    if(totalH===0)h+=`<div style="width:100%;height:3px;background:var(--bg4);border-radius:3px"></div>`;
+    h+=`</div>`;
+    h+=`<div style="font-size:8px;color:${d.isToday?'var(--gold)':'var(--text4)'};margin-top:4px;font-weight:${d.isToday?'700':'400'}">${d.day}</div>`;
+    h+=`</div>`;
+  });
+  h+=`</div>`;
+  h+=`<div style="display:flex;gap:14px;justify-content:center;margin-top:4px">`;
+  h+=`<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>New</div>`;
+  h+=`<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--red);display:inline-block"></span>Review</div>`;
+  h+=`</div></div></div>`;
+
+  h+=`</div>`; // close stats-row
+
+  // --- E. Review Stage Distribution ---
+  const stages=['New','R1','R2','R3','R4','Mastered'];
+  const stageCounts=[0,0,0,0,0,0];
+  RANGE_META.forEach(m=>{
+    const r=D.ranges.find(x=>x.id===m.id);
+    if(!r){stageCounts[0]++;}
+    else if(r.mastered){stageCounts[5]++;}
+    else{const rc=Math.min(r.reviewCount,4);stageCounts[rc]++;}
+  });
+  const maxStage=Math.max(1,...stageCounts);
+
+  h+=`<div class="card"><div class="card-h"><span class="card-title">Review Stage Distribution</span></div><div class="card-body">`;
+  h+=`<div style="display:flex;align-items:end;gap:12px;height:140px;padding-bottom:28px">`;
+  stages.forEach((s,i)=>{
+    const hPct=maxStage>0?(stageCounts[i]/maxStage*100):0;
+    const color=i===5?'var(--gold)':'var(--red)';
+    h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative">`;
+    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${color};margin-bottom:4px" data-anim="${stageCounts[i]}" data-delay="${i*80}">0</div>`;
+    h+=`<div style="width:100%;height:100px;display:flex;flex-direction:column;justify-content:end">`;
+    h+=`<div class="stat-bar-anim" style="width:100%;height:${hPct}%;background:${color};border-radius:4px 4px 0 0;min-height:3px;transform-origin:bottom;animation-delay:${i*80}ms;opacity:.85"></div>`;
+    h+=`</div>`;
+    h+=`<div style="font-size:9px;color:var(--text3);margin-top:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">${s}</div>`;
+    h+=`</div>`;
+  });
+  h+=`</div></div></div>`;
 
   el.innerHTML=h;
+
+  // Fire animations after render
+  requestAnimationFrame(()=>{
+    // Count-up animations
+    el.querySelectorAll('[data-anim]').forEach(e=>{
+      const target=parseInt(e.dataset.anim)||0;
+      const delay=parseInt(e.dataset.delay)||0;
+      const suffix=e.dataset.suffix||'';
+      setTimeout(()=>{
+        const start=performance.now();
+        function tick(now){
+          const t=Math.min((now-start)/600,1);
+          const ease=1-Math.pow(1-t,3);
+          e.textContent=Math.round(target*ease)+(t>=1?suffix:'');
+          if(t<1)requestAnimationFrame(tick);else e.textContent=target+suffix;
+        }
+        requestAnimationFrame(tick);
+      },delay);
+    });
+
+    // Mastery ring animation
+    const ring=el.querySelector('.mastery-ring');
+    if(ring){
+      const target=parseFloat(ring.dataset.target);
+      const total=parseFloat(ring.getAttribute('stroke-dasharray'));
+      ring.style.transition='stroke-dashoffset 1s cubic-bezier(.23,1,.32,1)';
+      setTimeout(()=>{ring.style.strokeDashoffset=target;},100);
+    }
+  });
 }
 
 
