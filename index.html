@@ -650,24 +650,25 @@ function saveNote(id,inputId,isActivation){
 // ALL
 function rAll(){
   const el=document.getElementById('tAll');
-  let h=`<div class="fb"><select id="ff" onchange="rAllList()"><option value="all">All</option><option value="rfi">RFI Only</option><option value="vs">vs RFI Only</option><option value="learning">Learning</option><option value="due">Due</option><option value="mastered">Mastered</option><option value="not_started">Not Started</option></select></div>`;
+  let h=`<div class="fb"><select id="ff" onchange="rAllList()"><option value="all">All</option><option value="rfi">First In (RFI)</option><option value="vs">vs RFI</option></select><select id="fs" onchange="rAllList()"><option value="all">All Status</option><option value="learning">Learning</option><option value="due">Due</option><option value="mastered">Mastered</option><option value="not_started">Not Started</option></select></div>`;
   h+=`<div class="al"><div class="al-l" id="aL"></div><div class="al-r" id="aR"></div></div>`;
   el.innerHTML=h;rAllList();rAllDet();
 }
 
 function rAllList(){
   const el=document.getElementById('aL');if(!el)return;
-  const f=document.getElementById('ff')?.value||'all';
+  const fc=document.getElementById('ff')?.value||'all';
+  const fs=document.getElementById('fs')?.value||'all';
   let items=RANGE_META.map(m=>{
     const r=D.ranges.find(x=>x.id===m.id);
     return{meta:m,data:r};
   }).filter(({meta:m,data:r})=>{
-    if(f==='rfi')return m.cat==='RFI';
-    if(f==='vs')return m.cat==='VS_RFI';
-    if(f==='learning')return r&&r.activated&&!r.mastered;
-    if(f==='due')return r&&isDue(r);
-    if(f==='mastered')return r&&r.mastered;
-    if(f==='not_started')return!r;
+    if(fc==='rfi'&&m.cat!=='RFI')return false;
+    if(fc==='vs'&&m.cat!=='VS_RFI')return false;
+    if(fs==='learning')return r&&r.activated&&!r.mastered;
+    if(fs==='due')return r&&isDue(r);
+    if(fs==='mastered')return r&&r.mastered;
+    if(fs==='not_started')return!r;
     return true;
   }).sort((a,b)=>{
     if(!a.data&&b.data)return 1;if(a.data&&!b.data)return-1;
@@ -681,7 +682,7 @@ function rAllList(){
   let h='';
   let lastCat='';
   items.forEach(({meta:m,data:r})=>{
-    if(f==='all'&&m.cat!==lastCat){
+    if(fc==='all'&&m.cat!==lastCat){
       lastCat=m.cat;
       h+=`<div style="font-size:9px;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:1px;padding:8px 4px 4px;margin-top:${lastCat?'12px':'0'}">${m.cat==='RFI'?'Raise First In':'vs RFI (3bet / Call / Fold)'}</div>`;
     }
