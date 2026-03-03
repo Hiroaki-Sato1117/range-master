@@ -1104,6 +1104,18 @@ lTh();load();
 try{const st=localStorage.getItem('prm_tab');if(st&&TABS.find(t=>t.id===st))ct=st;}catch(e){}
 rNav();rT();
 
+document.addEventListener('keydown',e=>{
+  if(e.metaKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+    e.preventDefault();
+    const i=TABS.findIndex(t=>t.id===ct);
+    if(e.key==='ArrowLeft'&&i>0)ct=TABS[i-1].id;
+    else if(e.key==='ArrowRight'&&i<TABS.length-1)ct=TABS[i+1].id;
+    else return;
+    try{localStorage.setItem('prm_tab',ct);}catch(ex){}
+    rNav();rT();
+  }
+});
+
 </script>
 </body>
 </html>
