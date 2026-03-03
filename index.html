@@ -408,6 +408,7 @@ const RANGE_TIPS={
 const RANKS=['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
 const INTV=[1,3,7,14,30];
 const TABS=[{id:'tasks',label:'TASKS'},{id:'all',label:'ALL RANGES'},{id:'stats',label:'STATS'},{id:'position',label:'POSITION'}];
+const SK={DATA:'prm1',TAB:'prm_tab',THEME:'prm_theme'};
 let D={ranges:[],dailyLog:{}};
 let ct='tasks',selId=null;
 
@@ -418,7 +419,8 @@ function cNext(fromDate,rc){if(rc>=5)return null;const d=new Date(fromDate);d.se
 function daysLeft(r){if(!r.nextReviewDate||r.mastered)return null;return Math.round((new Date(r.nextReviewDate)-new Date(td()))/864e5);}
 function isDue(r){return!r.mastered&&r.activated&&r.nextReviewDate&&r.nextReviewDate<=td();}
 function isNoNote(r){return r.activated&&r.reviewCount===0&&r.notes.length===0;}
-function save(){try{localStorage.setItem('prm1',JSON.stringify(D));}catch(e){}}
+function save(){try{localStorage.setItem(SK.DATA,JSON.stringify(D));}catch(e){}}
+function switchTab(id){ct=id;try{localStorage.setItem(SK.TAB,ct);}catch(e){}rNav();rT();}
 // === skillme integration ===
 function notifyParent(type,payload){
   if(window.parent===window)return;
@@ -451,7 +453,7 @@ window.addEventListener('message',function(ev){
   if(ev.data&&ev.data.type==='request:snapshot'){notifyParent('snapshot',buildSnapshot());}
   if(ev.data&&ev.data.type==='request:tasks'){notifyParent('tasks',{tasks:buildTasks()});}
 });
-function load(){try{const s=localStorage.getItem('prm1');if(s){D=JSON.parse(s);if(!D.ranges)D.ranges=[];if(!D.dailyLog)D.dailyLog={};}}catch(e){}}
+function load(){try{const s=localStorage.getItem(SK.DATA);if(s){D=JSON.parse(s);if(!D.ranges)D.ranges=[];if(!D.dailyLog)D.dailyLog={};}}catch(e){}}
 
 function getMeta(id){return RANGE_META.find(m=>m.id===id);}
 function getGrid(id){return GTO_RANGES[id]||{};}
@@ -496,17 +498,18 @@ function rProg(r){
   h+=`<span class="prog-l">${r.reviewCount}/5</span></div>`;return h;
 }
 
-function rTips(id){
+function rTips(id,large){
   const tips=RANGE_TIPS[id];if(!tips||!tips.length)return'';
-  let h='<div style="margin-top:12px;display:flex;flex-direction:column;gap:4px">';
-  tips.forEach(t=>{h+=`<div style="display:flex;gap:6px;align-items:start;padding:6px 10px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.4"><span style="color:var(--gold);flex-shrink:0">▸</span><span>${esc(t)}</span></div>`;});
-  return h+'</div>';
+  const g=large?'6px':'4px',p=large?'8px 12px':'6px 10px',r=large?'8px':'6px',fs=large?'12px':'11px',lh=large?'1.5':'1.4';
+  let h=large?'<div class="dp-section"><div class="dp-section-t">Tips & Strategy</div><div style="display:flex;flex-direction:column;gap:'+g+'">':'<div style="margin-top:12px;display:flex;flex-direction:column;gap:'+g+'">';
+  tips.forEach(t=>{h+=`<div style="display:flex;gap:${g};align-items:start;padding:${p};background:var(--bg2);border-radius:${r};border:1px solid var(--border);font-size:${fs};color:var(--text2);line-height:${lh}"><span style="color:var(--gold);flex-shrink:0">▸</span><span>${esc(t)}</span></div>`;});
+  return h+(large?'</div></div>':'</div>');
 }
 
 // NAV
 function rNav(){
   const n=document.getElementById('nv');n.innerHTML='';
-  TABS.forEach(t=>{const b=document.createElement('button');b.className='ntab'+(ct===t.id?' active':'');b.textContent=t.label;b.onclick=()=>{ct=t.id;try{localStorage.setItem('prm_tab',ct);}catch(e){}rNav();rT();};n.appendChild(b);});
+  TABS.forEach(t=>{const b=document.createElement('button');b.className='ntab'+(ct===t.id?' active':'');b.textContent=t.label;b.onclick=()=>switchTab(t.id);n.appendChild(b);});
   const learned=D.ranges.length,mastered=D.ranges.filter(r=>r.mastered).length;
   document.getElementById('navCount').textContent=`${mastered}/${RANGE_META.length} mastered`;
 }
@@ -725,12 +728,7 @@ function rAllDet(){
   h+=`<div style="margin-top:16px">${rGrid(m.id)}</div>`;
 
   // Tips
-  const tips=RANGE_TIPS[m.id];
-  if(tips&&tips.length){
-    h+=`<div class="dp-section"><div class="dp-section-t">Tips & Strategy</div><div style="display:flex;flex-direction:column;gap:6px">`;
-    tips.forEach(t=>{h+=`<div style="display:flex;gap:8px;align-items:start;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.5"><span style="color:var(--gold);font-size:14px;flex-shrink:0;margin-top:1px">▸</span><span>${esc(t)}</span></div>`;});
-    h+=`</div></div>`;
-  }
+  h+=rTips(m.id,true);
 
   // Timeline
   if(r){
@@ -1072,11 +1070,11 @@ function tTh(){
   const n=cur==='dark'?'light':'dark';
   h.setAttribute('data-theme',n);
   document.getElementById('thBtn').textContent=n==='dark'?'☀️':'🌙';
-  try{localStorage.setItem('prm_theme',n);}catch(e){}
+  try{localStorage.setItem(SK.THEME,n);}catch(e){}
 }
 function lTh(){
   try{
-    const t=localStorage.getItem('prm_theme');
+    const t=localStorage.getItem(SK.THEME);
     if(t){document.documentElement.setAttribute('data-theme',t);document.getElementById('thBtn').textContent=t==='dark'?'☀️':'🌙';}
     else{document.documentElement.setAttribute('data-theme','dark');document.getElementById('thBtn').textContent='☀️';}
   }catch(e){document.documentElement.setAttribute('data-theme','dark');}
@@ -1115,18 +1113,15 @@ function delNote(id,ni,prefix){
   if(ct==='all'){rAllList();rAllDet();}
 }
 lTh();load();
-try{const st=localStorage.getItem('prm_tab');if(st&&TABS.find(t=>t.id===st))ct=st;}catch(e){}
+try{const st=localStorage.getItem(SK.TAB);if(st&&TABS.find(t=>t.id===st))ct=st;}catch(e){}
 rNav();rT();
 
 document.addEventListener('keydown',e=>{
   if(e.metaKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
     e.preventDefault();
     const i=TABS.findIndex(t=>t.id===ct);
-    if(e.key==='ArrowLeft'&&i>0)ct=TABS[i-1].id;
-    else if(e.key==='ArrowRight'&&i<TABS.length-1)ct=TABS[i+1].id;
-    else return;
-    try{localStorage.setItem('prm_tab',ct);}catch(ex){}
-    rNav();rT();
+    const ni=e.key==='ArrowLeft'?i-1:i+1;
+    if(ni>=0&&ni<TABS.length)switchTab(TABS[ni].id);
   }
 });
 
