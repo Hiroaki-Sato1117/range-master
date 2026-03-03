@@ -53,13 +53,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .nav{background:var(--navBg,rgba(10,10,18,.95));backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;}
 .nav-brand{display:flex;align-items:center;gap:10px;margin-right:32px;}
 .nav-brand svg{width:22px;height:22px;}
-.nav-brand span{font-weight:800;font-size:14px;letter-spacing:-.5px;color:var(--text);}
+.nav-brand span{font-weight:800;font-size:14px;letter-spacing:-.5px;color:#e8e8f0;}
 .nav-tabs{display:flex;gap:2px;height:100%;align-items:end;}
-.ntab{padding:10px 18px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border:none;background:none;font-family:inherit;transition:all .15s;border-bottom:2px solid transparent;letter-spacing:.3px;text-transform:uppercase;}
-.ntab:hover{color:var(--text2);}
+.ntab{padding:10px 18px;font-size:12px;font-weight:600;color:#6a6a82;cursor:pointer;border:none;background:none;font-family:inherit;transition:all .15s;border-bottom:2px solid transparent;letter-spacing:.3px;text-transform:uppercase;}
+.ntab:hover{color:#a0a0b8;}
 .ntab.active{color:var(--red);border-bottom-color:var(--red);}
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.nav-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);padding:4px 10px;border:1px solid var(--border2);border-radius:6px;}
+.nav-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a6a82;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:6px;}
 
 /* Main */
 .main{max-width:1100px;margin:0 auto;padding:24px;}
@@ -241,10 +241,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <div class="nav-right"><span class="nav-count" id="navCount"></span><button class="thbtn" id="thBtn" onclick="tTh()">☀️</button></div>
 </nav>
 <div class="main">
-<div class="tc" id="tToday"></div>
+<div class="tc" id="tTasks"></div>
 <div class="tc" id="tAll"></div>
 <div class="tc" id="tStats"></div>
-<div class="tc" id="tGuide"></div>
+<div class="tc" id="tPosition"></div>
 </div>
 <script>
 const GTO_RANGES={
@@ -292,11 +292,114 @@ const RANGE_META=[
 {id:"HJ_VS_UTG_OPEN",cat:"VS_RFI",label:"HJ vs UTG",desc:"Hijack 3bet/call/fold vs UTG open"},
 ];
 
+const RANGE_TIPS={
+"UTG_RFI":[
+"最もタイトなポジション。後ろに5人いるので、プレミアムハンドと強いブロードウェイに絞る",
+"スーテッドコネクター(87s等)は含まれない。UTGでは投機的ハンドのインプライドオッズが低い",
+"A5sはレイズするがA8sはフォールド。A5sはストレート完成力+ナッツフラッシュでポストフロップの価値が高い"
+],
+"HJ_RFI":[
+"UTGより少し広い(~20-23%)。後ろに4人なのでやや緩められる",
+"小さいポケットペア(44-22)はフォールド寄り。セットマインのオッズが合いにくい",
+"スーテッドコネクター(87s,98s)が少し入ってくる。BTN/ブラインドからのコールに対してプレイしやすい"
+],
+"CO_RFI":[
+"BTNの1つ前で、かなり広いレンジ(~25-30%)。後ろにBTNしかいない",
+"スーテッドAx(A7s-A2s)がほぼ全て入る。ブロッカー効果+ナッツ可能性",
+"オフスートのブロードウェイ(KTo,QJo等)も追加。ポジションの優位性でカバーできる"
+],
+"BTN_RFI":[
+"最も広いRFIレンジ(~40-48%)。ポストフロップで常にポジションがある",
+"スーテッドギャッパー(86s,75s等)やオフスートAx(A7o-A2o)まで広がる",
+"全ポケットペアをレイズ。IPでのセットマインとポストフロップのプレイアビリティが高い"
+],
+"SB_RFI":[
+"BBしか残っていないため広い(~40-47%)が、ポストフロップはOOP",
+"サイジングは2.5-3bb。BBの広いディフェンスレンジに対して搾取的に打つ",
+"BBにフリーでフロップを見せないことが重要。リンプは基本的にNG"
+],
+"BB_VS_SB_OPEN":[
+"最も広いディフェンスレンジ。SBのオープンに対して既に1bb投資済み",
+"3betレンジはポラライズ:AA-QQ,AK + A5s-A2s等のブロッカー付きブラフ",
+"コールレンジが非常に広い。オッズが良いので多くのハンドでディフェンスできる"
+],
+"BB_VS_BTN_OPEN":[
+"BTNは広くオープンするため、BBもかなり広くディフェンスできる",
+"3betブラフにはスーテッドAx(A9s-A2s)やK9s等のブロッカーハンドを使う",
+"コールレンジにはスーテッドコネクターやギャッパーが多く含まれる"
+],
+"BB_VS_CO_OPEN":[
+"COのオープンレンジはやや絞られるため、BBのディフェンスも少し狭くなる",
+"3betバリューレンジはQQ+,AK,AQsあたりから。ブラフはA5s-A2s中心",
+"中程度のハンド(KTo,QJo等)はコールかフォールドの判断が重要"
+],
+"BB_VS_HJ_OPEN":[
+"HJのオープンに対してはさらにタイトにディフェンス",
+"3betバリューはJJ+,AK,AQs。ブラフは選択的にスーテッドAx",
+"フロップのテクスチャーとIPプレイヤーの数に応じてアジャスト"
+],
+"BB_VS_UTG_OPEN":[
+"UTGの狭いレンジに対して最もタイトなディフェンス",
+"3betバリューはQQ+,AKのみに近い。UTGのレンジが強いのでブラフも控えめ",
+"コールレンジはポケットペアとスーテッドブロードウェイが中心。マルチウェイになりやすい"
+],
+"SB_VS_BTN_OPEN":[
+"SBからは3betかフォールドが基本。コールするとOOPでBBにスクイーズされるリスク",
+"3betバリュー:QQ+,AK,AQs。ブラフ:A5s-A2s,KTs等のブロッカーハンド",
+"BTNの広いレンジに対してややワイドに3betできる"
+],
+"SB_VS_CO_OPEN":[
+"SBからCOに対する3betレンジ。BTN相手より少しタイトになる",
+"3betサイズは3-3.5x。COのオープンレンジにプレッシャーをかける",
+"コールはほぼしない。3betかフォールドのバイナリ戦略"
+],
+"SB_VS_HJ_OPEN":[
+"HJオープンに対するSBの3betレンジ。かなりタイト",
+"バリュー3bet:JJ+,AK。ブラフは少なめ、A5s等の厳選されたハンドのみ",
+"HJのレンジが強いので、ライトな3betは避ける"
+],
+"SB_VS_UTG_OPEN":[
+"UTGオープンに対するSBの3betレンジ。最もタイト",
+"ほぼQQ+,AKのみ。UTGのレンジが非常に強いため、ブラフ3betは最小限",
+"マルチウェイポットを避けるため、中途半端なハンドはフォールド"
+],
+"BTN_VS_CO_OPEN":[
+"IPからの3bet/コール/フォールド。ポジションの優位性が大きい",
+"3betバリュー:QQ+,AK,AQs。コール:中ペア,スーテッドコネクター,ブロードウェイ",
+"コールレンジが広い。IPでのポストフロップアドバンテージを活かす"
+],
+"BTN_VS_HJ_OPEN":[
+"HJオープンに対するBTNのアクション。IPで幅広くプレイ可能",
+"3betレンジはCO相手よりやや狭い。HJのレンジがタイトなため",
+"コールレンジにはスーテッドコネクター(87s-T9s)やポケットペアが含まれる"
+],
+"BTN_VS_UTG_OPEN":[
+"UTGオープンに対するBTNのアクション。IPだがレンジは絞る必要あり",
+"3betバリュー:QQ+,AK。UTGが強いのでライトな3betは減らす",
+"コール:JJ-77,AQs-ATs,KQs等。IPでセットマインやインプライドオッズを狙う"
+],
+"CO_VS_HJ_OPEN":[
+"COからHJオープンに対する3bet/コール/フォールド",
+"後ろにBTNとブラインドがいるので、コールするとマルチウェイリスク",
+"3betかフォールドが多め。コールレンジはBTN相手より狭い"
+],
+"CO_VS_UTG_OPEN":[
+"COからUTGオープンに対するアクション。後ろに3人いるためタイト",
+"3betバリュー:QQ+,AK。コール:JJ-88,AQs-AJs程度",
+"スクイーズを受けるリスクがあるため、中途半端なハンドはフォールド"
+],
+"HJ_VS_UTG_OPEN":[
+"HJからUTGオープンに対するアクション。後ろに4人残っていて最もタイト",
+"3betバリュー:QQ+,AKのみ。UTGのレンジが非常に強いため慎重に",
+"コール:JJ-99,AQs等の限られたハンド。フラットコールのリスクを理解する"
+]
+};
+
 const RANKS=['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
 const INTV=[1,3,7,14,30];
-const TABS=[{id:'today',label:'TODAY'},{id:'all',label:'ALL RANGES'},{id:'stats',label:'STATS'},{id:'guide',label:'GUIDE'}];
+const TABS=[{id:'tasks',label:'TASKS'},{id:'all',label:'ALL RANGES'},{id:'stats',label:'STATS'},{id:'position',label:'POSITION'}];
 let D={ranges:[],dailyLog:{}};
-let ct='today',selId=null;
+let ct='tasks',selId=null;
 
 const td=()=>new Date().toISOString().split('T')[0];
 const fmt=d=>d?((p=d.split('-'))&&`${+p[1]}/${+p[2]}`):'—';
@@ -383,20 +486,27 @@ function rProg(r){
   h+=`<span class="prog-l">${r.reviewCount}/5</span></div>`;return h;
 }
 
+function rTips(id){
+  const tips=RANGE_TIPS[id];if(!tips||!tips.length)return'';
+  let h='<div style="margin-top:12px;display:flex;flex-direction:column;gap:4px">';
+  tips.forEach(t=>{h+=`<div style="display:flex;gap:6px;align-items:start;padding:6px 10px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.4"><span style="color:var(--gold);flex-shrink:0">▸</span><span>${esc(t)}</span></div>`;});
+  return h+'</div>';
+}
+
 // NAV
 function rNav(){
   const n=document.getElementById('nv');n.innerHTML='';
-  TABS.forEach(t=>{const b=document.createElement('button');b.className='ntab'+(ct===t.id?' active':'');b.textContent=t.label;b.onclick=()=>{ct=t.id;rNav();rT();};n.appendChild(b);});
+  TABS.forEach(t=>{const b=document.createElement('button');b.className='ntab'+(ct===t.id?' active':'');b.textContent=t.label;b.onclick=()=>{ct=t.id;try{localStorage.setItem('prm_tab',ct);}catch(e){}rNav();rT();};n.appendChild(b);});
   const learned=D.ranges.length,mastered=D.ranges.filter(r=>r.mastered).length;
   document.getElementById('navCount').textContent=`${mastered}/${RANGE_META.length} mastered`;
 }
 function rT(){document.querySelectorAll('.tc').forEach(e=>e.classList.remove('active'));document.getElementById('t'+ct.charAt(0).toUpperCase()+ct.slice(1)).classList.add('active');
-  if(ct==='today')rToday();else if(ct==='all')rAll();else if(ct==='stats')rStats();else rGuide();
+  if(ct==='tasks')rTasks();else if(ct==='all')rAll();else if(ct==='stats')rStats();else rPosition();
 }
 
-// TODAY
-function rToday(){
-  const el=document.getElementById('tToday');
+// TASKS
+function rTasks(){
+  const el=document.getElementById('tTasks');
   const dues=D.ranges.filter(isDue).sort((a,b)=>(a.nextReviewDate||'').localeCompare(b.nextReviewDate||''));
   const noNotes=D.ranges.filter(r=>r.activated&&!r.mastered&&r.notes.length===0&&r.reviewCount===0);
   const notStarted=RANGE_META.filter(m=>!D.ranges.find(r=>r.id===m.id)).length;
@@ -443,7 +553,7 @@ function rToday(){
     h+=`<div class="dp-section-t" style="margin-bottom:10px;color:var(--gold)">Needs First Note</div>`;
     noNotes.forEach(r=>{
       const m=getMeta(r.id);if(!m)return;
-      h+=`<div class="today-card noex-card"><div class="tc-header"><div><div class="tc-name">${esc(m.label)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(m.desc)}</div></div><span class="badge noex">No Note</span></div><div class="tc-body">${rGrid(r.id)}<div style="margin-top:16px"><textarea class="note-input" id="tn_${r.id}" placeholder="Write notes about this range..."></textarea><div class="actions"><span class="note-hint">Save a note to start your review cycle</span><button class="btn btn-p" onclick="saveNote('${r.id}','tn_${r.id}',true)">Save & Activate</button></div></div></div></div>`;
+      h+=`<div class="today-card noex-card"><div class="tc-header"><div><div class="tc-name">${esc(m.label)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(m.desc)}</div></div><span class="badge noex">No Note</span></div><div class="tc-body">${rGrid(r.id)}${rTips(r.id)}<div style="margin-top:16px"><textarea class="note-input" id="tn_${r.id}" placeholder="Write notes about this range..."></textarea><div class="actions"><span class="note-hint">Save a note to start your review cycle</span><button class="btn btn-p" onclick="saveNote('${r.id}','tn_${r.id}',true)">Save & Activate</button></div></div></div></div>`;
     });
   }
 
@@ -451,7 +561,7 @@ function rToday(){
     h+=`<div class="dp-section-t" style="margin-bottom:10px;color:var(--red2)">Due for Review</div>`;
     dues.forEach(r=>{
       const m=getMeta(r.id);if(!m)return;
-      h+=`<div class="today-card due-card"><div class="tc-header"><div><div class="tc-name">${esc(m.label)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(m.desc)}</div></div><div style="display:flex;align-items:center;gap:8px"><span class="badge due">Review #${r.reviewCount+1}</span>${rProg(r)}</div></div><div class="tc-body">${rGrid(r.id)}`;
+      h+=`<div class="today-card due-card"><div class="tc-header"><div><div class="tc-name">${esc(m.label)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(m.desc)}</div></div><div style="display:flex;align-items:center;gap:8px"><span class="badge due">Review #${r.reviewCount+1}</span>${rProg(r)}</div></div><div class="tc-body">${rGrid(r.id)}${rTips(r.id)}`;
       if(r.notes.length){h+=`<div class="dp-section" style="margin-top:16px"><div class="dp-section-t">Previous Notes</div><div class="notes">`;r.notes.forEach((n,ni)=>{h+=`<div class="note-item"><span class="note-date">${fmt(n.date)}</span><span class="note-text" id="nt_${r.id}_${ni}" ondblclick="editNote('${r.id}',${ni},this)">${esc(n.text)}</span><textarea class="note-edit" id="ne_${r.id}_${ni}" onblur="saveEditNote('${r.id}',${ni})" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveEditNote('${r.id}',${ni})}">${esc(n.text)}</textarea><div class="note-actions"><button onclick="editNote('${r.id}',${ni},document.getElementById('nt_${r.id}_${ni}'))" title="Edit">✎</button><button class="del-note" onclick="delNote('${r.id}',${ni})" title="Delete">✕</button></div></div>`;});h+=`</div></div>`;}
       h+=`<div style="margin-top:12px"><textarea class="note-input" id="tn_${r.id}" placeholder="Write review notes..."></textarea><div class="actions"><span class="note-hint">Review #${r.reviewCount+1} of 5</span><button class="btn btn-p" onclick="saveNote('${r.id}','tn_${r.id}',false)">Save & Complete Review</button></div></div></div></div>`;
     });
@@ -525,15 +635,15 @@ function saveNote(id,inputId,isActivation){
   else{playRevSound();fireConfetti(btn);}
 
   // Slide-out animation on Today tab
-  if(ct==='today'&&card){card.classList.add('card-done');setTimeout(()=>{rToday();rNav();},650);}
-  else{if(ct==='today')rToday();rNav();}
+  if(ct==='tasks'&&card){card.classList.add('card-done');setTimeout(()=>{rTasks();rNav();},650);}
+  else{if(ct==='tasks')rTasks();rNav();}
   if(ct==='all'){rAllList();rAllDet();rNav();}
 
   // Check if all today's tasks are done
   setTimeout(()=>{
     const duesLeft=D.ranges.filter(isDue).length;
     const noNotesLeft=D.ranges.filter(r=>r.activated&&!r.mastered&&r.notes.length===0&&r.reviewCount===0).length;
-    if(duesLeft===0&&noNotesLeft===0&&ct==='today'&&D.ranges.length){showAllDonePopup();}
+    if(duesLeft===0&&noNotesLeft===0&&ct==='tasks'&&D.ranges.length){showAllDonePopup();}
   },700);
 }
 
@@ -602,6 +712,14 @@ function rAllDet(){
   let h=`<div class="dp"><div class="dp-name">${esc(m.label)}</div><div class="dp-cat">${esc(m.desc)}</div>`;
   if(r)h+=rProg(r);
   h+=`<div style="margin-top:16px">${rGrid(m.id)}</div>`;
+
+  // Tips
+  const tips=RANGE_TIPS[m.id];
+  if(tips&&tips.length){
+    h+=`<div class="dp-section"><div class="dp-section-t">Tips & Strategy</div><div style="display:flex;flex-direction:column;gap:6px">`;
+    tips.forEach(t=>{h+=`<div style="display:flex;gap:8px;align-items:start;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.5"><span style="color:var(--gold);font-size:14px;flex-shrink:0;margin-top:1px">▸</span><span>${esc(t)}</span></div>`;});
+    h+=`</div></div>`;
+  }
 
   // Timeline
   if(r){
@@ -821,8 +939,8 @@ function rStats(){
 }
 
 
-function rGuide(){
-  const el=document.getElementById('tGuide');
+function rPosition(){
+  const el=document.getElementById('tPosition');
   el.innerHTML=`
 <div class="card"><div class="card-h"><span class="card-title">6-Max Position Map</span><span style="font-size:11px;color:var(--text3)">Texas Hold'em</span></div><div class="card-body" style="padding:0">
 <svg viewBox="0 0 800 460" style="width:100%;max-width:800px;display:block;margin:0 auto">
@@ -987,7 +1105,9 @@ function delNote(id,ni,prefix){
   save();rNav();rT();
   if(ct==='all'){rAllList();rAllDet();}
 }
-lTh();load();rNav();rT();
+lTh();load();
+try{const st=localStorage.getItem('prm_tab');if(st&&TABS.find(t=>t.id===st))ct=st;}catch(e){}
+rNav();rT();
 
 </script>
 </body>
