@@ -225,8 +225,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .sl{font-size:9px;color:var(--text3);margin-top:5px;text-transform:uppercase;letter-spacing:1px;font-weight:600;}
 .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
 @media(max-width:700px){.stats-row{grid-template-columns:1fr;}}
-.flame-anim{animation:flameFlicker 1.5s ease-in-out infinite alternate;}
-@keyframes flameFlicker{0%{transform:scale(1) translateY(0);filter:brightness(1);}50%{transform:scale(1.06) translateY(-2px);filter:brightness(1.15);}100%{transform:scale(.97) translateY(1px);filter:brightness(.95);}}
+.flame-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
+.flame-wrap .flame-core{animation:flamePulse 1.2s ease-in-out infinite alternate;}
+.flame-wrap .flame-mid{position:absolute;animation:flameSway 1.8s ease-in-out infinite alternate-reverse;opacity:.7;}
+.flame-wrap .flame-outer{position:absolute;animation:flameOuter 2s ease-in-out infinite alternate;opacity:.35;}
+.flame-wrap .flame-spark{position:absolute;width:4px;height:4px;border-radius:50%;animation:sparkRise 1.4s ease-out infinite;}
+.flame-wrap .flame-spark:nth-child(4){left:30%;animation-delay:0s;animation-duration:1.2s;}
+.flame-wrap .flame-spark:nth-child(5){left:55%;animation-delay:.4s;animation-duration:1.6s;}
+.flame-wrap .flame-spark:nth-child(6){left:70%;animation-delay:.8s;animation-duration:1.3s;}
+@keyframes flamePulse{0%{transform:scale(1) translateY(0);}100%{transform:scale(1.08) translateY(-3px);}}
+@keyframes flameSway{0%{transform:scale(.85) translateY(2px) rotate(-4deg);}100%{transform:scale(.92) translateY(-2px) rotate(4deg);}}
+@keyframes flameOuter{0%{transform:scale(1.1) translateY(1px);opacity:.3;}100%{transform:scale(1.2) translateY(-4px);opacity:.15;}}
+@keyframes sparkRise{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-30px) scale(0);}}
 .stat-bar-anim{animation:barGrow .8s cubic-bezier(.23,1,.32,1) both;}
 @keyframes barGrow{from{transform:scaleY(0);}to{transform:scaleY(1);}}
 </style>
@@ -831,16 +841,20 @@ function rStats(){
     const ds=d.toISOString().split('T')[0];
     if(allDates.has(ds))streak++;else break;
   }
-  let flameSize=44,flameColor='var(--text4)',flameGlow='',flameMsg='Start your streak!';
-  if(streak>=1&&streak<=3){flameSize=52;flameColor='var(--gold)';flameMsg='Keep it up!';}
-  if(streak>=4&&streak<=7){flameSize=64;flameColor='#f97316';flameMsg='On a roll!';}
-  if(streak>=8){flameSize=80;flameColor='var(--red)';flameGlow=`filter:drop-shadow(0 0 12px var(--red));`;flameMsg="You're on fire!";}
+  let flameSize=44,flameMsg='Start your streak!',fOuter='var(--text4)',fMid='var(--text4)',fCore='var(--text4)',fSpark='var(--text4)',fGlow='';
+  if(streak>=1&&streak<=3){flameSize=56;fOuter='#dc2626';fMid='#f97316';fCore='#facc15';fSpark='#facc15';flameMsg='Keep it up!';}
+  if(streak>=4&&streak<=7){flameSize=68;fOuter='#b91c1c';fMid='#dc2626';fCore='#f97316';fSpark='#fbbf24';fGlow='filter:drop-shadow(0 0 16px rgba(249,115,22,.5));';flameMsg='On a roll!';}
+  if(streak>=8){flameSize=84;fOuter='#991b1b';fMid='#dc2626';fCore='#f97316';fSpark='#fde68a';fGlow='filter:drop-shadow(0 0 24px rgba(220,38,38,.6)) drop-shadow(0 0 48px rgba(249,115,22,.3));';flameMsg="You're on fire!";}
+  const fPath='M12 23c-4.97 0-8-3.03-8-7 0-2.14.86-3.88 2-5.28.7-.87 1.46-1.6 2-2.72 0 0 .64 2.27 2.27 3.49C10.84 7.02 12 2 12 2s1 3 2.5 5.5c.6 1 1.3 1.8 1.5 3-.5-1-1.5-2-1.5-2s.5 2 .5 3.5c0 1.5-.5 3-2 4-1 .67-2.5 1-3.5 1h.5c3 0 5.5-2 6-4.5.33-1.67 0-3-.5-4.5-.67 2-1.5 2.5-1.5 2.5s.33-2.5-.5-4.5C12.73 4 11.5 2.5 12 2c-2 3-5.5 5-6.5 9-.5 2 0 4 .5 5.5C7 18.5 9 20 12 20c2.5 0 4.5-1.5 5-3.5.5-2-.5-4-2-5 .5 1.5 0 3-1 4-.5.5-1.5 1-2 1z';
 
   h+=`<div class="card"><div class="card-h"><span class="card-title">Day Streak</span></div><div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:8px">`;
-  h+=`<div class="flame-anim" style="width:${flameSize}px;height:${flameSize}px;${flameGlow}">`;
-  h+=`<svg viewBox="0 0 24 24" width="${flameSize}" height="${flameSize}" fill="${flameColor}"><path d="M12 23c-4.97 0-8-3.03-8-7 0-2.14.86-3.88 2-5.28.7-.87 1.46-1.6 2-2.72 0 0 .64 2.27 2.27 3.49C10.84 7.02 12 2 12 2s1 3 2.5 5.5c.6 1 1.3 1.8 1.5 3-.5-1-1.5-2-1.5-2s.5 2 .5 3.5c0 1.5-.5 3-2 4-1 .67-2.5 1-3.5 1h.5c3 0 5.5-2 6-4.5.33-1.67 0-3-.5-4.5-.67 2-1.5 2.5-1.5 2.5s.33-2.5-.5-4.5C12.73 4 11.5 2.5 12 2c-2 3-5.5 5-6.5 9-.5 2 0 4 .5 5.5C7 18.5 9 20 12 20c2.5 0 4.5-1.5 5-3.5.5-2-.5-4-2-5 .5 1.5 0 3-1 4-.5.5-1.5 1-2 1z"/></svg>`;
+  h+=`<div class="flame-wrap" style="width:${flameSize}px;height:${flameSize+10}px;${fGlow}">`;
+  h+=`<svg class="flame-outer" viewBox="0 0 24 24" width="${flameSize}" height="${flameSize}" fill="${fOuter}"><path d="${fPath}"/></svg>`;
+  h+=`<svg class="flame-mid" viewBox="0 0 24 24" width="${flameSize*.75}" height="${flameSize*.75}" fill="${fMid}"><path d="${fPath}"/></svg>`;
+  h+=`<svg class="flame-core" viewBox="0 0 24 24" width="${flameSize*.5}" height="${flameSize*.5}" fill="${fCore}"><path d="${fPath}"/></svg>`;
+  if(streak>=1){h+=`<div class="flame-spark" style="background:${fSpark};top:20%"></div><div class="flame-spark" style="background:${fSpark};top:15%"></div><div class="flame-spark" style="background:${fSpark};top:25%"></div>`;}
   h+=`</div>`;
-  h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:${streak>0?flameColor:'var(--text4)'}" data-anim="${streak}" data-delay="200">0</div>`;
+  h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:${streak>0?fMid:'var(--text4)'}" data-anim="${streak}" data-delay="200">0</div>`;
   h+=`<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600">Day${streak!==1?'s':''} Streak</div>`;
   h+=`<div style="font-size:12px;color:var(--text2);font-weight:500;margin-top:2px">${flameMsg}</div>`;
   h+=`</div></div>`;
