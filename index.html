@@ -1112,6 +1112,11 @@ document.addEventListener('keydown',e=>{
     const ni=e.key==='ArrowLeft'?i-1:i+1;
     if(ni>=0&&ni<TABS.length)switchTab(TABS[ni].id);
   }
+  if(e.metaKey&&e.key==='Enter'){
+    e.preventDefault();
+    const btn=document.querySelector('.actions .btn.btn-p');
+    if(btn)btn.click();
+  }
 });
 
 </script>
