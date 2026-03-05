@@ -94,7 +94,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .gc.mixed-cf{background:var(--gcMixCF);color:var(--gcMixCFC);}
 .gc.pair{font-weight:800;}
 .gc:hover{filter:brightness(1.3);z-index:1;transform:scale(1.05);}
-.gc .pct{position:absolute;bottom:1px;right:2px;font-size:8px;opacity:.75;font-weight:600;}
+.gc .pct{position:absolute;bottom:1px;right:2px;font-size:8px;opacity:.85;font-weight:700;}
+.gc .pct.pct-r{color:var(--gcRaiseC);}
+.gc .pct.pct-c{color:var(--gcCallC);}
 
 /* Legend */
 .legend{display:flex;gap:16px;justify-content:center;margin:12px 0;font-size:11px;color:var(--text3);}
@@ -473,8 +475,10 @@ function rGrid(rangeId){
       const[f,c,r]=getAction(grid,hand);
       const cls=actionClass(f,c,r);
       const isPair=row===col;
-      const dominant=r>=c&&r>=f?r:(c>=f?c:f);
-      h+=`<div class="gc ${cls}${isPair?' pair':''}" style="background:${cellGrad(f,c,r)}" title="${hand}: R${r}% C${c}% F${f}%">${hand}${dominant<100&&dominant>0?`<span class="pct">${dominant}</span>`:''}</div>`;
+      let pctHtml='';
+      if(r>0&&r<100) pctHtml+=`<span class="pct pct-r" style="bottom:1px">${r}</span>`;
+      if(c>0&&c<100) pctHtml+=`<span class="pct pct-c" style="${r>0&&r<100?'bottom:9px':'bottom:1px'}">${c}</span>`;
+      h+=`<div class="gc ${cls}${isPair?' pair':''}" style="background:${cellGrad(f,c,r)}" title="${hand}: R${r}% C${c}% F${f}%">${hand}${pctHtml}</div>`;
     }
   }
   h+='</div></div>';
