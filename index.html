@@ -1207,6 +1207,8 @@ rNav();rT();
 
 document.addEventListener('keydown',e=>{
   if(e.metaKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+    const tag=document.activeElement?.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||document.activeElement?.isContentEditable)return;
     e.preventDefault();
     const i=TABS.findIndex(t=>t.id===ct);
     const ni=e.key==='ArrowLeft'?i-1:i+1;
